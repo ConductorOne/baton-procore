@@ -2,19 +2,25 @@ package connector
 
 import (
 	"context"
+	"fmt"
 	"io"
 
+	"github.com/conductorone/baton-procore/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
 )
 
-type Connector struct{}
+type Connector struct {
+	client *client.Client
+}
 
 // ResourceSyncers returns a ResourceSyncer for each resource type that should be synced from the upstream service.
 func (d *Connector) ResourceSyncers(ctx context.Context) []connectorbuilder.ResourceSyncer {
 	return []connectorbuilder.ResourceSyncer{
-		newUserBuilder(),
+		newCompanyBuilder(d.client),
+		newProjectBuilder(d.client),
+		newUserBuilder(d.client),
 	}
 }
 
@@ -39,6 +45,12 @@ func (d *Connector) Validate(ctx context.Context) (annotations.Annotations, erro
 }
 
 // New returns a new instance of the connector.
-func New(ctx context.Context) (*Connector, error) {
-	return &Connector{}, nil
+func New(ctx context.Context, clientId, clientSecret string) (*Connector, error) {
+	client, err := client.New(ctx, clientId, clientSecret)
+	if err != nil {
+		return nil, fmt.Errorf("error creating Procore client: %w", err)
+	}
+	return &Connector{
+		client: client,
+	}, nil
 }

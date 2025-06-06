@@ -6,10 +6,25 @@ import (
 )
 
 var (
+	clientId = field.StringField(
+		"procore-client-id",
+		field.WithDescription("The client ID to use for authentication."),
+		field.WithRequired(true),
+	)
+
+	clientSecret = field.StringField(
+		"procore-client-secret",
+		field.WithDescription("The client secret to use for authentication."),
+		field.WithRequired(true),
+	)
+
 	// ConfigurationFields defines the external configuration required for the
 	// connector to run. Note: these fields can be marked as optional or
 	// required.
-	ConfigurationFields = []field.SchemaField{}
+	ConfigurationFields = []field.SchemaField{
+		clientId,
+		clientSecret,
+	}
 
 	// FieldRelationships defines relationships between the fields listed in
 	// ConfigurationFields that can be automatically validated. For example, a
