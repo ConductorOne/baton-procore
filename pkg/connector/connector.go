@@ -19,7 +19,7 @@ type Connector struct {
 func (d *Connector) ResourceSyncers(ctx context.Context) []connectorbuilder.ResourceSyncer {
 	return []connectorbuilder.ResourceSyncer{
 		newCompanyBuilder(d.client),
-		newProjectBuilder(d.client),
+		// newProjectBuilder(d.client),
 		newUserBuilder(d.client),
 	}
 }

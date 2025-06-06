@@ -31,7 +31,8 @@ func companyResource(company client.Company) (*v2.Resource, error) {
 			resourceSdk.WithGroupProfile(profile),
 		},
 		resourceSdk.WithAnnotation(
-			&v2.ChildResourceType{ResourceTypeId: projectResourceType.Id},
+			// &v2.ChildResourceType{ResourceTypeId: projectResourceType.Id},
+			&v2.ChildResourceType{ResourceTypeId: userResourceType.Id},
 		),
 	)
 }
