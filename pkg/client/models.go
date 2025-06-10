@@ -152,6 +152,20 @@ type User struct {
 	VerifiedEmployee          bool               `json:"verified_employee"`
 }
 
+type CreateUserBody struct {
+	// required: true
+	EmailAddress string `json:"email_address"`
+	// required: true
+	LastName string `json:"last_name"`
+
+	FirstName  string `json:"first_name"`
+	City       string `json:"city"`
+	Address    string `json:"address"`
+	JobTitle   string `json:"job_title"`
+	IsEmployee bool   `json:"is_employee"`
+	IsActive   bool   `json:"is_active"`
+}
+
 type PermissionTemplate struct {
 	Id              int    `json:"id"`
 	Name            string `json:"name"`

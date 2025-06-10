@@ -39,6 +39,90 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 	return &v2.ConnectorMetadata{
 		DisplayName: "My Baton Connector",
 		Description: "The template implementation of a baton connector",
+		AccountCreationSchema: &v2.ConnectorAccountCreationSchema{
+			FieldMap: map[string]*v2.ConnectorAccountCreationSchema_Field{
+				"email": {
+					DisplayName: "Email",
+					Required:    true,
+					Description: "The email address of the user.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "Email",
+					Order:       1,
+				},
+				"lastName": {
+					DisplayName: "User's Last Name",
+					Required:    true,
+					Description: "The last name of the user.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "Last Name",
+					Order:       2,
+				},
+				"firstName": {
+					DisplayName: "User's First Name",
+					Required:    false,
+					Description: "The first name of the user.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "First Name",
+					Order:       3,
+				},
+				"city": {
+					DisplayName: "User's City",
+					Required:    false,
+					Description: "The city where the user resides.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "City",
+					Order:       4,
+				},
+				"address": {
+					DisplayName: "User's Address",
+					Required:    false,
+					Description: "The address of the user.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "Address",
+					Order:       5,
+				},
+				"jobTitle": {
+					DisplayName: "User's Job Title",
+					Required:    false,
+					Description: "The job title of the user.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "Job Title",
+					Order:       6,
+				},
+				"isEmployee": {
+					DisplayName: "Is Employee",
+					Required:    false,
+					Description: "Indicates if the user is an employee.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "Is Employee",
+					Order:       7,
+				},
+				"isActive": {
+					DisplayName: "Is Active",
+					Required:    false,
+					Description: "Indicates if the user is currently active.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "Is Active",
+					Order:       8,
+				},
+			},
+		},
 	}, nil
 }
 
