@@ -2,6 +2,10 @@ package client
 
 import "time"
 
+type Pagination struct {
+	HasNextPage bool
+}
+
 type Company struct {
 	Id       int64  `json:"id"`
 	Name     string `json:"name"`
@@ -9,56 +13,84 @@ type Company struct {
 }
 
 type Project struct {
-	Id                      int64          `json:"id"`
-	AccountingProjectNumber *string        `json:"accounting_project_number"`
-	Active                  bool           `json:"active"`
-	Address                 *string        `json:"address"`
-	City                    *string        `json:"city"`
-	Company                 Company        `json:"company"`
-	CompletionDate          string         `json:"completion_date"`
-	CountryCode             string         `json:"country_code"`
-	County                  *string        `json:"county"`
-	CreatedAt               time.Time      `json:"created_at"`
-	CreatedBy               CreatedBy      `json:"created_by"`
-	CustomFields            map[string]any `json:"custom_fields"`
-	DeliveryMethod          *string        `json:"delivery_method"`
-	DesignatedMarketArea    *string        `json:"designated_market_area"`
-	DisplayName             string         `json:"display_name"`
-	EstimatedValue          string         `json:"estimated_value"`
-	IsDemo                  bool           `json:"is_demo"`
-	Latitude                *float64       `json:"latitude"`
-	Longitude               *float64       `json:"longitude"`
-	Name                    string         `json:"name"`
-	OriginCode              *string        `json:"origin_code"`
-	OriginData              *string        `json:"origin_data"`
-	OriginId                *string        `json:"origin_id"`
-	OwnersProjectId         *string        `json:"owners_project_id"`
-	ParentJob               *string        `json:"parent_job"`
-	ParentJobId             *string        `json:"parent_job_id"`
-	Phone                   *string        `json:"phone"`
-	PhotoId                 *string        `json:"photo_id"`
-	ProjectBidTypeId        *string        `json:"project_bid_type_id"`
-	ProjectNumber           *string        `json:"project_number"`
-	ProjectOwnerTypeId      *string        `json:"project_owner_type_id"`
-	ProjectRegionId         *string        `json:"project_region_id"`
-	ProjectStage            *string        `json:"project_stage"`
-	ProjectedFinishDate     string         `json:"projected_finish_date"`
-	Sector                  string         `json:"sector"`
-	Stage                   string         `json:"stage"`
-	StartDate               string         `json:"start_date"`
-	StateCode               *string        `json:"state_code"`
-	StoreNumber             *string        `json:"store_number"`
-	TimeZone                string         `json:"time_zone"`
-	TotalValue              string         `json:"total_value"`
-	UpdatedAt               time.Time      `json:"updated_at"`
-	WorkScope               string         `json:"work_scope"`
-	Zip                     *string        `json:"zip"`
+	Id                      int                    `json:"id"`
+	AccountingProjectNumber *int                   `json:"accounting_project_number"`
+	Active                  bool                   `json:"active"`
+	ActualStartDate         *string                `json:"actual_start_date"`
+	Address                 *string                `json:"address"`
+	City                    *string                `json:"city"`
+	Company                 Company                `json:"company"`
+	CompletionDate          *string                `json:"completion_date"`
+	CountryCode             *string                `json:"country_code"`
+	County                  *string                `json:"county"`
+	CreatedAt               time.Time              `json:"created_at"`
+	CreatedBy               CreatedBy              `json:"created_by"`
+	CustomFields            map[string]CustomField `json:"custom_fields"`
+	DeliveryMethod          *string                `json:"delivery_method"`
+	Description             *string                `json:"description"`
+	DesignatedMarketArea    *string                `json:"designated_market_area"`
+	DisplayName             string                 `json:"display_name"`
+	EstimatedValue          *string                `json:"estimated_value"`
+	IsDemo                  bool                   `json:"is_demo"`
+	Latitude                *float64               `json:"latitude"`
+	Longitude               *float64               `json:"longitude"`
+	Name                    string                 `json:"name"`
+	OriginCode              *string                `json:"origin_code"`
+	OriginData              *string                `json:"origin_data"`
+	OriginId                *string                `json:"origin_id"`
+	OwnersProjectId         *int                   `json:"owners_project_id"`
+	ParentJobId             *int                   `json:"parent_job_id"`
+	Phone                   *string                `json:"phone"`
+	PhotoId                 *int                   `json:"photo_id"`
+	ProjectBidTypeId        *int                   `json:"project_bid_type_id"`
+	ProjectNumber           *string                `json:"project_number"`
+	ProjectOwnerTypeId      *int                   `json:"project_owner_type_id"`
+	ProjectRegionId         *int                   `json:"project_region_id"`
+	ProjectStage            *ProjectStage          `json:"project_stage"`
+	ProjectTemplate         *ProjectTemplate       `json:"project_template"`
+	ProjectType             *ProjectType           `json:"project_type"`
+	ProjectedFinishDate     *string                `json:"projected_finish_date"`
+	Sector                  *string                `json:"sector"`
+	SquareFeet              *int                   `json:"square_feet"`
+	StartDate               *string                `json:"start_date"`
+	StateCode               *string                `json:"state_code"`
+	StoreNumber             *int                   `json:"store_number"`
+	TimeZone                *string                `json:"time_zone"`
+	TotalValue              *string                `json:"total_value"`
+	UpdatedAt               time.Time              `json:"updated_at"`
+	WorkScope               *string                `json:"work_scope"`
+	Zip                     *string                `json:"zip"`
+}
+
+type ProjectStage struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type ProjectTemplate struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type ProjectType struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type LOVEntry struct {
+	Id    int    `json:"id"`
+	Label string `json:"label"`
 }
 
 type CreatedBy struct {
-	Id    int64  `json:"id"`
-	Login string `json:"login"`
+	Id    int    `json:"id"`
 	Name  string `json:"name"`
+	Login string `json:"login"`
+}
+
+type CustomField struct {
+	DataType string `json:"data_type"`
+	Value    any    `json:"value"`
 }
 
 type Contact struct {
@@ -80,6 +112,7 @@ type ContactInfo struct {
 }
 
 type User struct {
+	Id                        int                `json:"id"`
 	Address                   string             `json:"address"`
 	Avatar                    string             `json:"avatar"`
 	BusinessId                string             `json:"business_id"`
@@ -95,7 +128,6 @@ type User struct {
 	ERPIntegratedAccountant   bool               `json:"erp_integrated_accountant"`
 	FaxNumber                 string             `json:"fax_number"`
 	FirstName                 string             `json:"first_name"`
-	Id                        int                `json:"id"`
 	Initials                  string             `json:"initials"`
 	IsActive                  bool               `json:"is_active"`
 	IsEmployee                bool               `json:"is_employee"`

@@ -3,6 +3,7 @@ package connector
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/conductorone/baton-procore/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
@@ -19,37 +20,14 @@ func (o *userBuilder) ResourceType(ctx context.Context) *v2.ResourceType {
 	return userResourceType
 }
 
-func contactResource(user client.Contact) (*v2.Resource, error) {
-	profile := map[string]interface{}{
-		"email":      user.ContactInfo.Email,
-		"isEmployee": user.IsEmployee,
-		// contact, previously known as reference person, is an individual without a procore account
-		// https://support.procore.com/faq/what-is-a-contact-in-procore-and-which-project-tools-support-the-concept
-		"contact": true,
-	}
-
-	return resourceSdk.NewUserResource(
-		fmt.Sprintf("%s %s", user.FirstName, user.LastName),
-		userResourceType,
-		user.Id,
-		[]resourceSdk.UserTraitOption{
-			resourceSdk.WithUserProfile(profile),
-			resourceSdk.WithEmail(user.ContactInfo.Email, true),
-			resourceSdk.WithEmployeeID(user.EmployeeId),
-		},
-	)
-}
-
 func userResource(user client.User) (*v2.Resource, error) {
-	profile := map[string]interface{}{
+	profile := map[string]any{
 		"email":      user.EmailAddress,
 		"isEmployee": user.IsEmployee,
 		// contact, previously known as reference person, is an individual without a procore account
 		// https://support.procore.com/faq/what-is-a-contact-in-procore-and-which-project-tools-support-the-concept
 		"contact": false,
 	}
-	// __AUTO_GENERATED_PRINT_VAR_START__
-	fmt.Println(fmt.Sprintf("userResource user: %+v", user)) // __AUTO_GENERATED_PRINT_VAR_END__
 
 	status := v2.UserTrait_Status_STATUS_ENABLED
 	if !user.IsActive {
@@ -85,25 +63,20 @@ func (o *userBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId,
 		return nil, "", nil, nil
 	}
 
-	contacts, err := o.client.GetContacts(ctx, parentResourceID.Resource)
-	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
-	}
-
-	rv := make([]*v2.Resource, 0, len(contacts))
-	for _, contact := range contacts {
-		resource, err := contactResource(contact)
+	var page = 1
+	var err error
+	if pToken.Token != "" {
+		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: error converting user to resource: %w", err)
+			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
 		}
-		rv = append(rv, resource)
 	}
-
-	users, err := o.client.GetCompanyUsers(ctx, parentResourceID.Resource)
+	users, res, err := o.client.GetCompanyUsers(ctx, parentResourceID.Resource, page)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
 	}
 
+	rv := make([]*v2.Resource, 0, len(users))
 	for _, user := range users {
 		resource, err := userResource(user)
 		if err != nil {
@@ -111,7 +84,12 @@ func (o *userBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId,
 		}
 		rv = append(rv, resource)
 	}
-	return rv, "", nil, nil
+
+	var nextPage string
+	if client.HasNextPage(res) {
+		nextPage = strconv.Itoa(page + 1)
+	}
+	return rv, nextPage, nil, nil
 }
 
 // Entitlements always returns an empty slice for users.

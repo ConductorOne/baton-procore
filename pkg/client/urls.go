@@ -7,9 +7,13 @@ const (
 
 	// https://developers.procore.com/reference/rest/company-people?version=latest
 	// internal and external users are referred to as "people" in Procore.
-	PeopleURL = CompaniesURL + "/%s/people"
+	CompanyPeopleURL = CompaniesURL + "/%s/people"
+
+	ProjectPeopleURL = ProjectsURL + "/%s/people"
 
 	// https://developers.procore.com/reference/rest/company-users?version=latest
 	// internal only, this endpoint brings back way more data than the People endpoint.
-	UsersURL = CompaniesURL + "/%s/users"
+	CompanyUsersURL = CompaniesURL + "/%s/users"
+
+	ProjectUsersURL = ProjectsURL + "/%s/users"
 )

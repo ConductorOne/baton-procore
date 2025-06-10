@@ -3,16 +3,67 @@ package connector
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"sync"
 
 	"github.com/conductorone/baton-procore/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/pagination"
+	"github.com/conductorone/baton-sdk/pkg/types/entitlement"
+	"github.com/conductorone/baton-sdk/pkg/types/grant"
 	resourceSdk "github.com/conductorone/baton-sdk/pkg/types/resource"
 )
 
+const projectMembership = "member"
+
 type projectBuilder struct {
-	client *client.Client
+	client     *client.Client
+	m          sync.Mutex
+	usersCache *map[string]int
+}
+
+func (o *projectBuilder) fillCache(ctx context.Context, companyId string) error {
+	var page = 1
+	users, res, err := o.client.GetCompanyUsers(ctx, companyId, page)
+	if err != nil {
+		return fmt.Errorf("baton-procore: error getting users for company %s: %w", companyId, err)
+	}
+	for _, u := range users {
+		(*o.usersCache)[u.EmailAddress] = u.Id
+	}
+
+	for client.HasNextPage(res) {
+		page++
+		users, res, err = o.client.GetCompanyUsers(ctx, companyId, page)
+		if err != nil {
+			return fmt.Errorf("baton-procore: error getting users for company %s: %w", companyId, err)
+		}
+		for _, u := range users {
+			(*o.usersCache)[u.EmailAddress] = u.Id
+		}
+	}
+	return nil
+}
+
+func (o *projectBuilder) GetUserId(ctx context.Context, companyId, email string) (int, error) {
+	o.m.Lock()
+	defer o.m.Unlock()
+	userId, ok := (*o.usersCache)[email]
+	if ok {
+		return userId, nil
+	}
+
+	err := o.fillCache(ctx, companyId)
+	if err != nil {
+		return 0, fmt.Errorf("baton-procore: error filling user cache for company %s: %w", companyId, err)
+	}
+
+	userId, ok = (*o.usersCache)[email]
+	if !ok {
+		return 0, fmt.Errorf("baton-procore: user with email %s not found in company %s", email, companyId)
+	}
+	return userId, nil
 }
 
 func (o *projectBuilder) ResourceType(ctx context.Context) *v2.ResourceType {
@@ -20,18 +71,14 @@ func (o *projectBuilder) ResourceType(ctx context.Context) *v2.ResourceType {
 }
 
 func projectResource(project client.Project) (*v2.Resource, error) {
-	profile := map[string]interface{}{
-		"address":   project.Address,
-		"city":      project.City,
-		"company":   project.Company.Name,
-		"active":    project.Active,
-		"phone":     project.Phone,
-		"createdAt": project.CreatedAt,
-		"updatedAt": project.UpdatedAt,
+	profile := map[string]any{
+		"company_id":   fmt.Sprintf("%d", project.Company.Id),
+		"company_name": project.Company.Name,
+		"active":       project.Active,
 	}
 	return resourceSdk.NewGroupResource(
 		project.Name,
-		companyResourceType,
+		projectResourceType,
 		project.Id,
 		[]resourceSdk.GroupTraitOption{
 			resourceSdk.WithGroupProfile(profile),
@@ -39,14 +86,21 @@ func projectResource(project client.Project) (*v2.Resource, error) {
 	)
 }
 
-// List returns all the projects from the database as resource objects.
-// Projects include a ProjectTrait because they are the 'shape' of a standard project.
 func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId, pToken *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
 	if parentResourceID == nil {
 		return nil, "", nil, nil
 	}
 
-	projects, err := o.client.GetProjects(ctx, parentResourceID.Resource)
+	var page = 1
+	var err error
+	if pToken.Token != "" {
+		page, err = strconv.Atoi(pToken.Token)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
+		}
+	}
+
+	projects, res, err := o.client.GetProjects(ctx, parentResourceID.Resource, page)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
 	}
@@ -60,19 +114,68 @@ func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 		rv = append(rv, resource)
 	}
 
-	return rv, "", nil, nil
+	var nextPage string
+	if client.HasNextPage(res) {
+		nextPage = strconv.Itoa(page + 1)
+	}
+
+	return rv, nextPage, nil, nil
 }
 
 func (o *projectBuilder) Entitlements(_ context.Context, resource *v2.Resource, _ *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {
-	return nil, "", nil, nil
+	return []*v2.Entitlement{
+		entitlement.NewAssignmentEntitlement(
+			resource,
+			projectMembership,
+			entitlement.WithGrantableTo(userResourceType),
+			entitlement.WithDescription(fmt.Sprintf("Member of %s project", resource.DisplayName)),
+			entitlement.WithDisplayName(fmt.Sprintf("Member of %s project", resource.DisplayName)),
+		),
+	}, "", nil, nil
 }
 
 func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pToken *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
-	return nil, "", nil, nil
+	// get company id from resource groupTrait
+	groupTrait, err := resourceSdk.GetGroupTrait(resource)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("baton-procore: error getting group traits: %w", err)
+	}
+	traits := groupTrait.GetProfile().AsMap()
+	companyId, ok := traits["company_id"].(string)
+	if !ok {
+		return nil, "", nil, fmt.Errorf("baton-procore: company_id not found in project resource profile")
+	}
+
+	users, err := o.client.GetProjectUsers(ctx, companyId, resource.Id.Resource)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
+	}
+
+	rv := make([]*v2.Grant, 0, len(users))
+	for _, user := range users {
+		// using company user id because project users have a different id, even if they are the same user.
+		companyUserId, err := o.GetUserId(ctx, companyId, user.EmailAddress)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("baton-procore: error getting user id for email %s: %w", user.EmailAddress, err)
+		}
+
+		principalID, err := resourceSdk.NewResourceID(userResourceType, companyUserId)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("baton-procore: failed to create user resource ID: %w", err)
+		}
+		rv = append(rv, grant.NewGrant(
+			resource,
+			companyMembership,
+			principalID,
+		))
+	}
+	return rv, "", nil, nil
 }
 
-func newProjectBuilder(client *client.Client) *projectBuilder {
+func newProjectBuilder(client *client.Client, userCache *map[string]int) *projectBuilder {
 	return &projectBuilder{
-		client: client,
+		client:     client,
+		m:          sync.Mutex{},
+		usersCache: userCache,
 	}
 }

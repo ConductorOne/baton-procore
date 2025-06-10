@@ -13,13 +13,17 @@ import (
 
 type Connector struct {
 	client *client.Client
+	// cache is needed because project users ids are different from company users ids, even if
+	// they are the same user.
+	//	email: company_id
+	usersCache map[string]int
 }
 
 // ResourceSyncers returns a ResourceSyncer for each resource type that should be synced from the upstream service.
 func (d *Connector) ResourceSyncers(ctx context.Context) []connectorbuilder.ResourceSyncer {
 	return []connectorbuilder.ResourceSyncer{
 		newCompanyBuilder(d.client),
-		// newProjectBuilder(d.client),
+		newProjectBuilder(d.client, &d.usersCache),
 		newUserBuilder(d.client),
 	}
 }
@@ -51,6 +55,7 @@ func New(ctx context.Context, clientId, clientSecret string) (*Connector, error)
 		return nil, fmt.Errorf("error creating Procore client: %w", err)
 	}
 	return &Connector{
-		client: client,
+		client:     client,
+		usersCache: make(map[string]int),
 	}, nil
 }
