@@ -87,10 +87,10 @@ func (c *Client) GetProjectPeople(ctx context.Context, companyId, projectId stri
 	return target, res, nil
 }
 
-func (c *Client) GetCompanyUsers(ctx context.Context, companyId string, page int) ([]User, *http.Response, error) {
+func (c *Client) GetCompanyUsers(ctx context.Context, companyId string, page int) ([]User, *http.Response, *v2.RateLimitDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(CompanyPeopleURL, companyId), nil)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	values := req.URL.Query()
 	values.Set("page", fmt.Sprintf("%d", page))
@@ -106,25 +106,30 @@ func (c *Client) GetCompanyUsers(ctx context.Context, companyId string, page int
 
 	if err != nil {
 		logBody(ctx, res.Body)
-		return nil, nil, fmt.Errorf("error getting company users from Procore API: %w", err)
+		return nil, nil, nil, fmt.Errorf("error getting company users from Procore API: %w", err)
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices {
 		logBody(ctx, res.Body)
-		return nil, nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
+		return nil, nil, nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
 	}
 
-	return target, res, nil
+	return target, res, &rateLimitData, nil
 }
 
-func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId string) ([]User, error) {
+func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId string, page int) ([]User, *http.Response, *v2.RateLimitDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(ProjectUsersURL, projectId), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Procore-Company-Id", companyId)
+
+	values := req.URL.Query()
+	values.Set("page", fmt.Sprintf("%d", page))
+	values.Set("per_page", fmt.Sprintf("%d", perPage))
+	req.URL.RawQuery = values.Encode()
 
 	var target []User
 	var rateLimitData v2.RateLimitDescription
@@ -134,14 +139,14 @@ func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId strin
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("error getting project users from Procore API: %w", err)
+		return nil, nil, nil, fmt.Errorf("error getting project users from Procore API: %w", err)
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices {
 		logBody(ctx, res.Body)
-		return nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
+		return nil, nil, nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
 	}
 
-	return target, nil
+	return target, res, &rateLimitData, nil
 }

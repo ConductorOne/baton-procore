@@ -11,10 +11,10 @@ import (
 
 const perPage = 100
 
-func (c *Client) GetCompanies(ctx context.Context, page int) ([]Company, *http.Response, error) {
+func (c *Client) GetCompanies(ctx context.Context, page int) ([]Company, *http.Response, *v2.RateLimitDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, CompaniesURL, nil)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	values := req.URL.Query()
@@ -31,14 +31,14 @@ func (c *Client) GetCompanies(ctx context.Context, page int) ([]Company, *http.R
 
 	if err != nil {
 		logBody(ctx, res.Body)
-		return nil, nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
+		return nil, nil, nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices {
 		logBody(ctx, res.Body)
-		return nil, nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
+		return nil, nil, nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
 	}
 
-	return target, res, nil
+	return target, res, &rateLimitData, nil
 }

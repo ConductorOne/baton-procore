@@ -71,10 +71,13 @@ func (o *userBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId,
 			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
 		}
 	}
-	users, res, err := o.client.GetCompanyUsers(ctx, parentResourceID.Resource, page)
+
+	var annotations annotations.Annotations
+	users, res, rateLimitDesc, err := o.client.GetCompanyUsers(ctx, parentResourceID.Resource, page)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
 	}
+	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
 	rv := make([]*v2.Resource, 0, len(users))
 	for _, user := range users {
@@ -89,7 +92,7 @@ func (o *userBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId,
 	if client.HasNextPage(res) {
 		nextPage = strconv.Itoa(page + 1)
 	}
-	return rv, nextPage, nil, nil
+	return rv, nextPage, annotations, nil
 }
 
 // Entitlements always returns an empty slice for users.

@@ -52,10 +52,12 @@ func (o *companyBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 		}
 	}
 
-	companies, res, err := o.client.GetCompanies(ctx, page)
+	var annotations annotations.Annotations
+	companies, res, rateLimitDesc, err := o.client.GetCompanies(ctx, page)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
 	}
+	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
 	rv := make([]*v2.Resource, 0, len(companies))
 	for _, company := range companies {
@@ -70,7 +72,7 @@ func (o *companyBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 	if client.HasNextPage(res) {
 		nextPage = strconv.Itoa(page + 1)
 	}
-	return rv, nextPage, nil, nil
+	return rv, nextPage, annotations, nil
 }
 
 func (o *companyBuilder) Entitlements(_ context.Context, resource *v2.Resource, _ *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {
@@ -95,10 +97,12 @@ func (o *companyBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 		}
 	}
 
-	users, res, err := o.client.GetCompanyUsers(ctx, resource.Id.Resource, page)
+	var annotations annotations.Annotations
+	users, res, rateLimitDesc, err := o.client.GetCompanyUsers(ctx, resource.Id.Resource, page)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
 	}
+	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
 	rv := make([]*v2.Grant, 0, len(users))
 	for _, user := range users {
@@ -117,7 +121,7 @@ func (o *companyBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 	if client.HasNextPage(res) {
 		nextPage = strconv.Itoa(page + 1)
 	}
-	return rv, nextPage, nil, nil
+	return rv, nextPage, annotations, nil
 }
 
 func newCompanyBuilder(client *client.Client) *companyBuilder {

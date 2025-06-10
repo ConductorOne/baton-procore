@@ -38,7 +38,7 @@ func getCompanyId(resource *v2.Resource) (string, error) {
 
 func (o *projectBuilder) fillCache(ctx context.Context, companyId string) error {
 	var page = 1
-	users, res, err := o.client.GetCompanyUsers(ctx, companyId, page)
+	users, res, _, err := o.client.GetCompanyUsers(ctx, companyId, page)
 	if err != nil {
 		return fmt.Errorf("baton-procore: error getting users for company %s: %w", companyId, err)
 	}
@@ -48,7 +48,7 @@ func (o *projectBuilder) fillCache(ctx context.Context, companyId string) error 
 
 	for client.HasNextPage(res) {
 		page++
-		users, res, err = o.client.GetCompanyUsers(ctx, companyId, page)
+		users, res, _, err = o.client.GetCompanyUsers(ctx, companyId, page)
 		if err != nil {
 			return fmt.Errorf("baton-procore: error getting users for company %s: %w", companyId, err)
 		}
@@ -150,16 +150,27 @@ func (o *projectBuilder) Entitlements(_ context.Context, resource *v2.Resource, 
 }
 
 func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pToken *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
+	var page = 1
+	var err error
+	if pToken.Token != "" {
+		page, err = strconv.Atoi(pToken.Token)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
+		}
+	}
+
 	// get company id from resource groupTrait
 	companyId, err := getCompanyId(resource)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting company id from project resource: %w", err)
 	}
 
-	users, err := o.client.GetProjectUsers(ctx, companyId, resource.Id.Resource)
+	var annotations annotations.Annotations
+	users, res, rateLimitDesc, err := o.client.GetProjectUsers(ctx, companyId, resource.Id.Resource, page)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
 	}
+	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
 	rv := make([]*v2.Grant, 0, len(users))
 	for _, user := range users {
@@ -179,7 +190,11 @@ func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 			principalID,
 		))
 	}
-	return rv, "", nil, nil
+	var nextPage string
+	if client.HasNextPage(res) {
+		nextPage = strconv.Itoa(page + 1)
+	}
+	return rv, nextPage, annotations, nil
 }
 
 func (o *projectBuilder) Grant(ctx context.Context, principal *v2.Resource, entitlement *v2.Entitlement) (annotations.Annotations, error) {
