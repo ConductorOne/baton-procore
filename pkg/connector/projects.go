@@ -23,6 +23,19 @@ type projectBuilder struct {
 	usersCache *map[string]int
 }
 
+func getCompanyId(resource *v2.Resource) (string, error) {
+	groupTrait, err := resourceSdk.GetGroupTrait(resource)
+	if err != nil {
+		return "", fmt.Errorf("baton-procore: error getting group traits: %w", err)
+	}
+	traits := groupTrait.GetProfile().AsMap()
+	companyId, ok := traits["company_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("baton-procore: company_id not found in project resource profile")
+	}
+	return companyId, nil
+}
+
 func (o *projectBuilder) fillCache(ctx context.Context, companyId string) error {
 	var page = 1
 	users, res, err := o.client.GetCompanyUsers(ctx, companyId, page)
@@ -100,10 +113,12 @@ func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 		}
 	}
 
-	projects, res, err := o.client.GetProjects(ctx, parentResourceID.Resource, page)
+	var annotations annotations.Annotations
+	projects, res, rateLimitDesc, err := o.client.GetProjects(ctx, parentResourceID.Resource, page)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
 	}
+	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
 	rv := make([]*v2.Resource, 0, len(projects))
 	for _, project := range projects {
@@ -119,7 +134,7 @@ func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 		nextPage = strconv.Itoa(page + 1)
 	}
 
-	return rv, nextPage, nil, nil
+	return rv, nextPage, annotations, nil
 }
 
 func (o *projectBuilder) Entitlements(_ context.Context, resource *v2.Resource, _ *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {
@@ -136,14 +151,9 @@ func (o *projectBuilder) Entitlements(_ context.Context, resource *v2.Resource, 
 
 func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pToken *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
 	// get company id from resource groupTrait
-	groupTrait, err := resourceSdk.GetGroupTrait(resource)
+	companyId, err := getCompanyId(resource)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting group traits: %w", err)
-	}
-	traits := groupTrait.GetProfile().AsMap()
-	companyId, ok := traits["company_id"].(string)
-	if !ok {
-		return nil, "", nil, fmt.Errorf("baton-procore: company_id not found in project resource profile")
+		return nil, "", nil, fmt.Errorf("baton-procore: error getting company id from project resource: %w", err)
 	}
 
 	users, err := o.client.GetProjectUsers(ctx, companyId, resource.Id.Resource)
@@ -170,6 +180,45 @@ func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 		))
 	}
 	return rv, "", nil, nil
+}
+
+func (o *projectBuilder) Grant(ctx context.Context, principal *v2.Resource, entitlement *v2.Entitlement) (annotations.Annotations, error) {
+	projectId := entitlement.Resource.Id.Resource
+	companyId, err := getCompanyId(entitlement.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("baton-procore: error getting company id from project resource: %w", err)
+	}
+	userId, err := strconv.Atoi(principal.Id.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("baton-procore: failed to parse user id from grant principal: %w", err)
+	}
+
+	err = o.client.AddUserToProject(ctx, companyId, projectId, userId)
+	if err != nil {
+		return nil, fmt.Errorf("baton-procore: error adding user to project: %w", err)
+	}
+
+	return nil, nil
+}
+
+func (o *projectBuilder) Revoke(ctx context.Context, grant *v2.Grant) (annotations.Annotations, error) {
+	entitlement := grant.Entitlement
+	projectId := entitlement.Resource.Id.Resource
+	companyId, err := getCompanyId(entitlement.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("baton-procore: error getting company id from project resource: %w", err)
+	}
+	userId, err := strconv.Atoi(grant.Principal.Id.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("baton-procore: failed to parse user id from grant principal: %w", err)
+	}
+
+	err = o.client.RemoveUserFromProject(ctx, companyId, projectId, userId)
+	if err != nil {
+		return nil, fmt.Errorf("baton-procore: error removing user from project: %w", err)
+	}
+
+	return nil, nil
 }
 
 func newProjectBuilder(client *client.Client, userCache *map[string]int) *projectBuilder {

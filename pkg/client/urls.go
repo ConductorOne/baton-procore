@@ -16,4 +16,10 @@ const (
 	CompanyUsersURL = CompaniesURL + "/%s/users"
 
 	ProjectUsersURL = ProjectsURL + "/%s/users"
+
+	// https://developers.procore.com/reference/rest/project-users?version=latest#add-company-user-to-project
+	AddUserToProjectURL = ProjectUsersURL + "/%d/actions/add"
+
+	// https://developers.procore.com/reference/rest/project-users?version=latest#remove-a-user-from-the-project
+	RemoveUserFromProjectURL = ProjectUsersURL + "/%d/actions/remove"
 )

@@ -35,7 +35,7 @@ func (c *Client) GetCompanies(ctx context.Context, page int) ([]Company, *http.R
 	}
 
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices {
 		logBody(ctx, res.Body)
 		return nil, nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
 	}
