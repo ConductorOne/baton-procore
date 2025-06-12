@@ -174,13 +174,7 @@ func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 
 	rv := make([]*v2.Grant, 0, len(users))
 	for _, user := range users {
-		// using company user id because project users have a different id, even if they are the same user.
-		companyUserId, err := o.GetUserId(ctx, companyId, user.EmailAddress)
-		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: error getting user id for email %s: %w", user.EmailAddress, err)
-		}
-
-		principalID, err := resourceSdk.NewResourceID(userResourceType, companyUserId)
+		principalID, err := resourceSdk.NewResourceID(userResourceType, user.Id)
 		if err != nil {
 			return nil, "", nil, fmt.Errorf("baton-procore: failed to create user resource ID: %w", err)
 		}

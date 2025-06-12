@@ -41,6 +41,16 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 		Description: "The template implementation of a baton connector",
 		AccountCreationSchema: &v2.ConnectorAccountCreationSchema{
 			FieldMap: map[string]*v2.ConnectorAccountCreationSchema_Field{
+				"companyId": {
+					DisplayName: "Company ID",
+					Required:    true,
+					Description: "The ID of the company to which the user belongs.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
+						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					},
+					Placeholder: "Company ID",
+					Order:       1,
+				},
 				"email": {
 					DisplayName: "Email",
 					Required:    true,

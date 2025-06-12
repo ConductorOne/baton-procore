@@ -105,6 +105,47 @@ func (o *userBuilder) Grants(ctx context.Context, resource *v2.Resource, pToken 
 	return nil, "", nil, nil
 }
 
+func (o *userBuilder) CreateAccountCapabilityDetails(ctx context.Context) (*v2.CredentialDetailsAccountProvisioning, annotations.Annotations, error) {
+	return &v2.CredentialDetailsAccountProvisioning{
+		SupportedCredentialOptions: []v2.CapabilityDetailCredentialOption{
+			v2.CapabilityDetailCredentialOption_CAPABILITY_DETAIL_CREDENTIAL_OPTION_NO_PASSWORD,
+		},
+		PreferredCredentialOption: v2.CapabilityDetailCredentialOption_CAPABILITY_DETAIL_CREDENTIAL_OPTION_NO_PASSWORD,
+	}, nil, nil
+}
+
+// func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.AccountInfo, credentialOptions *v2.CredentialOptions) (
+// 	connectorbuilder.CreateAccountResponse,
+// 	[]*v2.PlaintextData,
+// 	annotations.Annotations,
+// 	error,
+// ) {
+// 	pMap := accountInfo.Profile.AsMap()
+// 	email, ok := pMap["email"].(string)
+// 	if !ok {
+// 		return nil, nil, nil, fmt.Errorf("baton-procore: email not found in profile")
+// 	}
+// 	lastName, ok := pMap["lastName"].(string)
+// 	if !ok {
+// 		return nil, nil, nil, fmt.Errorf("baton-procore: lastName not found in profile")
+// 	}
+// 	firstName, _ := pMap["firstName"].(string)
+// 	city, _ := pMap["city"].(string)
+// 	address, _ := pMap["address"].(string)
+// 	jobTitle, _ := pMap["jobTitle"].(string)
+// 	isEmployee, _ := pMap["isEmployee"].(string)
+// 	isActive, _ := pMap["isActive"].(string)
+//
+// 	teams, err := o.client.CreateCompanyUser(ctx, companyId, client.CreateUserBody{})
+// 	if err != nil {
+// 		return nil, nil, nil, fmt.Errorf("baton-procore: failed to create account: %w", err)
+// 	}
+//
+// 	return &v2.CreateAccountResponse_ActionRequiredResult{
+// 		Message: string(orgMembership.Status),
+// 	}, nil, nil, nil
+// }
+
 func newUserBuilder(client *client.Client) *userBuilder {
 	return &userBuilder{
 		client: client,

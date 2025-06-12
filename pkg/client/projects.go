@@ -10,7 +10,7 @@ import (
 )
 
 func (c *Client) GetProjects(ctx context.Context, companyId string, page int) ([]Project, *http.Response, *v2.RateLimitDescription, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ProjectsURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, GetProjectsURL, nil)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
 	}

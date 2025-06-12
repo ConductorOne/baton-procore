@@ -1,21 +1,14 @@
 package client
 
 const (
-	BaseURL      = "https://api.procore.com/rest/v1.0"
-	CompaniesURL = BaseURL + "/companies"
-	ProjectsURL  = BaseURL + "/projects"
-
-	// https://developers.procore.com/reference/rest/company-people?version=latest
-	// internal and external users are referred to as "people" in Procore.
-	CompanyPeopleURL = CompaniesURL + "/%s/people"
-
-	ProjectPeopleURL = ProjectsURL + "/%s/people"
+	BaseURL         = "https://api.procore.com/rest"
+	GetCompaniesURL = BaseURL + "/v1.0/companies"
+	GetProjectsURL  = BaseURL + "/v1.1/projects"
 
 	// https://developers.procore.com/reference/rest/company-users?version=latest
-	// internal only, this endpoint brings back way more data than the People endpoint.
-	CompanyUsersURL = CompaniesURL + "/%s/users"
+	CompanyUsersURL = BaseURL + "/v1.3/companies/%s/users"
 
-	ProjectUsersURL = ProjectsURL + "/%s/users"
+	ProjectUsersURL = BaseURL + "/v1.0/projects/%s/users"
 
 	// https://developers.procore.com/reference/rest/project-users?version=latest#add-company-user-to-project
 	AddUserToProjectURL = ProjectUsersURL + "/%d/actions/add"
