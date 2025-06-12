@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/conductorone/baton-procore/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
@@ -18,9 +17,7 @@ import (
 const projectMembership = "member"
 
 type projectBuilder struct {
-	client     *client.Client
-	m          sync.Mutex
-	usersCache *map[string]int
+	client *client.Client
 }
 
 func getCompanyId(resource *v2.Resource) (string, error) {
@@ -34,49 +31,6 @@ func getCompanyId(resource *v2.Resource) (string, error) {
 		return "", fmt.Errorf("baton-procore: company_id not found in project resource profile")
 	}
 	return companyId, nil
-}
-
-func (o *projectBuilder) fillCache(ctx context.Context, companyId string) error {
-	var page = 1
-	users, res, _, err := o.client.GetCompanyUsers(ctx, companyId, page)
-	if err != nil {
-		return fmt.Errorf("baton-procore: error getting users for company %s: %w", companyId, err)
-	}
-	for _, u := range users {
-		(*o.usersCache)[u.EmailAddress] = u.Id
-	}
-
-	for client.HasNextPage(res) {
-		page++
-		users, res, _, err = o.client.GetCompanyUsers(ctx, companyId, page)
-		if err != nil {
-			return fmt.Errorf("baton-procore: error getting users for company %s: %w", companyId, err)
-		}
-		for _, u := range users {
-			(*o.usersCache)[u.EmailAddress] = u.Id
-		}
-	}
-	return nil
-}
-
-func (o *projectBuilder) GetUserId(ctx context.Context, companyId, email string) (int, error) {
-	o.m.Lock()
-	defer o.m.Unlock()
-	userId, ok := (*o.usersCache)[email]
-	if ok {
-		return userId, nil
-	}
-
-	err := o.fillCache(ctx, companyId)
-	if err != nil {
-		return 0, fmt.Errorf("baton-procore: error filling user cache for company %s: %w", companyId, err)
-	}
-
-	userId, ok = (*o.usersCache)[email]
-	if !ok {
-		return 0, fmt.Errorf("baton-procore: user with email %s not found in company %s", email, companyId)
-	}
-	return userId, nil
 }
 
 func (o *projectBuilder) ResourceType(ctx context.Context) *v2.ResourceType {
@@ -230,10 +184,8 @@ func (o *projectBuilder) Revoke(ctx context.Context, grant *v2.Grant) (annotatio
 	return nil, nil
 }
 
-func newProjectBuilder(client *client.Client, userCache *map[string]int) *projectBuilder {
+func newProjectBuilder(client *client.Client) *projectBuilder {
 	return &projectBuilder{
-		client:     client,
-		m:          sync.Mutex{},
-		usersCache: userCache,
+		client: client,
 	}
 }

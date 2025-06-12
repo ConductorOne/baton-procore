@@ -67,7 +67,7 @@ func (c *Client) AddUserToProject(ctx context.Context, companyId, projectId stri
 
 // https://developers.procore.com/reference/rest/project-users?version=latest#remove-a-user-from-the-project
 func (c *Client) RemoveUserFromProject(ctx context.Context, companyId, projectId string, userId int) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf(RemoveUserFromProjectURL, projectId, userId), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fmt.Sprintf(RemoveUserFromProjectURL, projectId, userId), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
