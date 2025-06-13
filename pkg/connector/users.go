@@ -160,6 +160,10 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 	return &v2.CreateAccountResponse_ActionRequiredResult{}, nil, nil, nil
 }
 
+func (o *userBuilder) Delete(ctx context.Context, resourceId *v2.ResourceId) (annotations.Annotations, error) {
+	return nil, fmt.Errorf("baton-procore: delete operation is not supported in the procore API yet ")
+}
+
 func newUserBuilder(client *client.Client) *userBuilder {
 	return &userBuilder{
 		client: client,
