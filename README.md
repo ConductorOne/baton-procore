@@ -40,9 +40,32 @@ baton resources
 # Data Model
 
 `baton-procore` will pull down information about the following resources:
+- Companies
+- Projects
 - Users
 
-`baton-procore` does not specify supporting account provisioning or entitlement provisioning.
+# Requirements
+
+To use the `baton-procore` connector, you need to set up a Procore application with the following steps:
+
+## Setting up Procore Application
+
+1. **Create a Procore App**
+   - Go to https://developers.procore.com/ and create a new application
+   - Follow the documentation at https://developers.procore.com/documentation/building-apps-create-new for detailed instructions
+
+2. **Configure the App for Data Connector**
+   - After creating the app, navigate to the app's configuration builder section
+   - Select `Data Connector Components`
+   - Check the service account checkbox to enable service account functionality
+
+3. **Get Your Credentials**
+   - Copy the app's Client ID and Client Secret ID from the application settings
+   - You'll need these values for the `--client-id` and `--client-secret` flags
+
+4. **Enable Project Directory (For Provisioning)**
+   - If you plan to use provisioning features, enable project directory in the projects you want to provision
+   - Go to each project's admin section, then navigate to tool settings to enable this feature
 
 # Contributing, Support and Issues
 

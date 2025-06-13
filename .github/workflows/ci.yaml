@@ -4,6 +4,8 @@ on: pull_request
 env:
   BATON_LOG_LEVEL: debug
   BATON_TOKEN: "${{ secrets.BATON_TOKEN }}"
+  BATON_PROCORE_CLIENT_ID: "${{ secrets.BATON_PROCORE_CLIENT_ID }}"
+  BATON_PROCORE_CLIENT_SECRET: "${{ secrets.BATON_PROCORE_CLIENT_SECRET }}"
 
 jobs:
   go-lint:
