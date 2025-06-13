@@ -8,6 +8,7 @@ import (
 	"github.com/conductorone/baton-procore/pkg/client"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
+	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
 	"github.com/conductorone/baton-sdk/pkg/pagination"
 	resourceSdk "github.com/conductorone/baton-sdk/pkg/types/resource"
 )
@@ -114,37 +115,50 @@ func (o *userBuilder) CreateAccountCapabilityDetails(ctx context.Context) (*v2.C
 	}, nil, nil
 }
 
-// func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.AccountInfo, credentialOptions *v2.CredentialOptions) (
-// 	connectorbuilder.CreateAccountResponse,
-// 	[]*v2.PlaintextData,
-// 	annotations.Annotations,
-// 	error,
-// ) {
-// 	pMap := accountInfo.Profile.AsMap()
-// 	email, ok := pMap["email"].(string)
-// 	if !ok {
-// 		return nil, nil, nil, fmt.Errorf("baton-procore: email not found in profile")
-// 	}
-// 	lastName, ok := pMap["lastName"].(string)
-// 	if !ok {
-// 		return nil, nil, nil, fmt.Errorf("baton-procore: lastName not found in profile")
-// 	}
-// 	firstName, _ := pMap["firstName"].(string)
-// 	city, _ := pMap["city"].(string)
-// 	address, _ := pMap["address"].(string)
-// 	jobTitle, _ := pMap["jobTitle"].(string)
-// 	isEmployee, _ := pMap["isEmployee"].(string)
-// 	isActive, _ := pMap["isActive"].(string)
-//
-// 	teams, err := o.client.CreateCompanyUser(ctx, companyId, client.CreateUserBody{})
-// 	if err != nil {
-// 		return nil, nil, nil, fmt.Errorf("baton-procore: failed to create account: %w", err)
-// 	}
-//
-// 	return &v2.CreateAccountResponse_ActionRequiredResult{
-// 		Message: string(orgMembership.Status),
-// 	}, nil, nil, nil
-// }
+func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.AccountInfo, credentialOptions *v2.CredentialOptions) (
+	connectorbuilder.CreateAccountResponse,
+	[]*v2.PlaintextData,
+	annotations.Annotations,
+	error,
+) {
+	pMap := accountInfo.Profile.AsMap()
+	companyId, ok := pMap["companyId"].(string)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("baton-procore: companyId not found in parent resource ID")
+	}
+	email, ok := pMap["email"].(string)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("baton-procore: email not found in profile")
+	}
+	lastName, ok := pMap["lastName"].(string)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("baton-procore: lastName not found in profile")
+	}
+	firstName, _ := pMap["firstName"].(string)
+	city, _ := pMap["city"].(string)
+	address, _ := pMap["address"].(string)
+	jobTitle, _ := pMap["jobTitle"].(string)
+	isEmployee, _ := pMap["isEmployee"].(bool)
+	isActive, _ := pMap["isActive"].(bool)
+
+	err := o.client.CreateCompanyUser(ctx, companyId, client.CreateUserBody{
+		User: client.UserBody{
+			EmailAddress: email,
+			LastName:     lastName,
+			FirstName:    firstName,
+			City:         city,
+			Address:      address,
+			JobTitle:     jobTitle,
+			IsEmployee:   isEmployee,
+			IsActive:     isActive,
+		},
+	})
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("baton-procore: failed to create account: %w", err)
+	}
+
+	return &v2.CreateAccountResponse_ActionRequiredResult{}, nil, nil, nil
+}
 
 func newUserBuilder(client *client.Client) *userBuilder {
 	return &userBuilder{

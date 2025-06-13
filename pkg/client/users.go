@@ -85,6 +85,9 @@ func (c *Client) CreateCompanyUser(ctx context.Context, companyId string, body C
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
+	req.Header.Set("Procore-Company-Id", companyId)
+	req.Header.Set("Content-Type", "application/json")
+
 	res, err := c.Do(req)
 	if err != nil {
 		logBody(ctx, res.Body)

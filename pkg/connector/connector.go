@@ -59,7 +59,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "Email",
-					Order:       1,
+					Order:       2,
 				},
 				"lastName": {
 					DisplayName: "User's Last Name",
@@ -69,7 +69,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "Last Name",
-					Order:       2,
+					Order:       3,
 				},
 				"firstName": {
 					DisplayName: "User's First Name",
@@ -79,7 +79,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "First Name",
-					Order:       3,
+					Order:       4,
 				},
 				"city": {
 					DisplayName: "User's City",
@@ -89,7 +89,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "City",
-					Order:       4,
+					Order:       5,
 				},
 				"address": {
 					DisplayName: "User's Address",
@@ -99,7 +99,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "Address",
-					Order:       5,
+					Order:       6,
 				},
 				"jobTitle": {
 					DisplayName: "User's Job Title",
@@ -109,7 +109,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "Job Title",
-					Order:       6,
+					Order:       7,
 				},
 				"isEmployee": {
 					DisplayName: "Is Employee",
@@ -119,7 +119,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "Is Employee",
-					Order:       7,
+					Order:       8,
 				},
 				"isActive": {
 					DisplayName: "Is Active",
@@ -129,7 +129,7 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
 					Placeholder: "Is Active",
-					Order:       8,
+					Order:       9,
 				},
 			},
 		},

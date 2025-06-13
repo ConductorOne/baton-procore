@@ -153,17 +153,21 @@ type User struct {
 }
 
 type CreateUserBody struct {
+	User UserBody `json:"user"`
+}
+
+type UserBody struct {
 	// required: true
 	EmailAddress string `json:"email_address"`
 	// required: true
 	LastName string `json:"last_name"`
 
-	FirstName  string `json:"first_name"`
-	City       string `json:"city"`
-	Address    string `json:"address"`
-	JobTitle   string `json:"job_title"`
-	IsEmployee bool   `json:"is_employee"`
-	IsActive   bool   `json:"is_active"`
+	FirstName  string `json:"first_name,omitempty"`
+	City       string `json:"city,omitempty"`
+	Address    string `json:"address,omitempty"`
+	JobTitle   string `json:"job_title,omitempty"`
+	IsEmployee bool   `json:"is_employee,omitempty"`
+	IsActive   bool   `json:"is_active,omitempty"`
 }
 
 type PermissionTemplate struct {
