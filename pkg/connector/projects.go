@@ -63,14 +63,14 @@ func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
 		}
 	}
 
 	var annotations annotations.Annotations
 	projects, res, rateLimitDesc, err := o.client.GetProjects(ctx, parentResourceID.Resource, page)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
+		return nil, "", nil, fmt.Errorf("baton-procore: error getting projects: %w", err)
 	}
 	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
@@ -109,7 +109,7 @@ func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
 		}
 	}
 
