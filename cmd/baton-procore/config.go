@@ -10,12 +10,14 @@ var (
 		"procore-client-id",
 		field.WithDescription("The client ID to use for authentication."),
 		field.WithRequired(true),
+		field.WithDisplayName("Client ID"),
 	)
 
 	clientSecret = field.StringField(
 		"procore-client-secret",
 		field.WithDescription("The client secret to use for authentication."),
 		field.WithRequired(true),
+		field.WithDisplayName("Client Secret"),
 	)
 
 	// ConfigurationFields defines the external configuration required for the
