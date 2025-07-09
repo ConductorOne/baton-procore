@@ -18,6 +18,7 @@ var (
 		field.WithDescription("The client secret to use for authentication."),
 		field.WithRequired(true),
 		field.WithDisplayName("Client Secret"),
+		field.WithIsSecret(true),
 	)
 
 	// ConfigurationFields defines the external configuration required for the
