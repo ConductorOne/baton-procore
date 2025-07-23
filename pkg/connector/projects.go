@@ -58,7 +58,7 @@ func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 		return nil, "", nil, nil
 	}
 
-	var page = 1
+	page := 1
 	var err error
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
@@ -104,7 +104,7 @@ func (o *projectBuilder) Entitlements(_ context.Context, resource *v2.Resource, 
 }
 
 func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pToken *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
-	var page = 1
+	page := 1
 	var err error
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)

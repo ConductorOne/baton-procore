@@ -28,7 +28,6 @@ func (c *Client) GetCompanies(ctx context.Context, page int) ([]Company, *http.R
 		uhttp.WithJSONResponse(&target),
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
-
 	if err != nil {
 		logBody(ctx, res.Body)
 		return nil, nil, nil, fmt.Errorf("baton-procore: error getting companies: %w", err)

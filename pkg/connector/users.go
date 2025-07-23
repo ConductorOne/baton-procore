@@ -64,7 +64,7 @@ func (o *userBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId,
 		return nil, "", nil, nil
 	}
 
-	var page = 1
+	page := 1
 	var err error
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
