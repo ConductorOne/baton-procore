@@ -23,7 +23,7 @@ func main() {
 	_, cmd, err := config.DefineConfiguration(
 		ctx,
 		"baton-procore",
-		getConnector[*cfg.Procore],
+		getConnector,
 		cfg.Config,
 	)
 	if err != nil {
@@ -40,7 +40,7 @@ func main() {
 	}
 }
 
-func getConnector[T field.Configurable](ctx context.Context, config T) (types.ConnectorServer, error) {
+func getConnector(ctx context.Context, config *cfg.Procore) (types.ConnectorServer, error) {
 	l := ctxzap.Extract(ctx)
 	if err := field.Validate(cfg.Config, config); err != nil {
 		return nil, err
