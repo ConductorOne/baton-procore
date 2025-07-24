@@ -28,6 +28,9 @@ jobs:
         run: ./connector config > config_schema.json
 
       - name: Run and save capabilities output
+        env:
+          BATON_PROCORE_CLIENT_ID: "${{ secrets.PROCORE_CLIENT_ID }}"
+          BATON_PROCORE_CLIENT_SECRET: "${{ secrets.PROCORE_CLIENT_SECRET }}"
         run: ./connector capabilities > baton_capabilities.json
 
       - name: Commit changes
