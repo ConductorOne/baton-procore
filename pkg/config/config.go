@@ -6,7 +6,7 @@ import (
 
 var (
 	// Add the SchemaFields for the Config.
-	ClientId = field.StringField(
+	ClientID = field.StringField(
 		"procore-client-id",
 		field.WithDescription("The client ID to use for authentication."),
 		field.WithRequired(true),
@@ -21,7 +21,7 @@ var (
 		field.WithIsSecret(true),
 	)
 
-	ConfigurationFields = []field.SchemaField{ClientId, ClientSecret}
+	ConfigurationFields = []field.SchemaField{ClientID, ClientSecret}
 
 	// FieldRelationships defines relationships between the ConfigurationFields that can be automatically validated.
 	// For example, a username and password can be required together, or an access token can be
@@ -35,3 +35,8 @@ var Config = field.NewConfiguration(
 	field.WithConstraints(FieldRelationships...),
 	field.WithConnectorDisplayName("Procore"),
 )
+
+var EnvMapping = map[string]field.SchemaField{
+	"PROCORE_CLIENT_ID": ClientID,
+	"PROCORE_CLIENT_SECRET": ClientSecret,
+}

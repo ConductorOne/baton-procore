@@ -46,7 +46,7 @@ func getConnector(ctx context.Context, config *cfg.Procore) (types.ConnectorServ
 		return nil, err
 	}
 
-	cb, err := connector.New(ctx, config.GetString(cfg.ClientId.FieldName), config.GetString(cfg.ClientSecret.FieldName))
+	cb, err := connector.New(ctx, config.GetString(cfg.ClientID.FieldName), config.GetString(cfg.ClientSecret.FieldName))
 	if err != nil {
 		l.Error("error creating connector", zap.Error(err))
 		return nil, err
