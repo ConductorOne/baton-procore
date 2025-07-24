@@ -28,7 +28,6 @@ func (c *Client) GetProjects(ctx context.Context, companyId string, page int) ([
 		uhttp.WithJSONResponse(&target),
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
-
 	if err != nil {
 		logBody(ctx, res.Body)
 		return nil, nil, nil, fmt.Errorf("baton-procore: error getting projects: %w", err)

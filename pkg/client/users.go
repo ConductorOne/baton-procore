@@ -27,7 +27,6 @@ func (c *Client) GetCompanyUsers(ctx context.Context, companyId string, page int
 		uhttp.WithJSONResponse(&target),
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
-
 	if err != nil {
 		logBody(ctx, res.Body)
 		return nil, nil, nil, fmt.Errorf("error getting company users from Procore API: %w", err)
@@ -61,7 +60,6 @@ func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId strin
 		uhttp.WithJSONResponse(&target),
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
-
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("error getting project users from Procore API: %w", err)
 	}
