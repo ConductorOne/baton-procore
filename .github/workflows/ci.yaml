@@ -26,6 +26,8 @@ jobs:
   test-projects:
     runs-on: ubuntu-latest
     env:
+      BATON_PROCORE_CLIENT_ID: "${{ secrets.BATON_PROCORE_CLIENT_ID }}"
+      BATON_PROCORE_CLIENT_SECRET: "${{ secrets.BATON_PROCORE_CLIENT_SECRET }}"
       CONNECTOR_GRANT: 'project:598134326135521:member:user:13753064'
       CONNECTOR_ENTITLEMENT: 'project:598134326135521:member'
       CONNECTOR_PRINCIPAL: '13753064'

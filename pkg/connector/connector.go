@@ -37,6 +37,7 @@ func (d *Connector) Asset(ctx context.Context, asset *v2.AssetRef) (string, io.R
 
 // Metadata returns metadata about the connector.
 func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error) {
+	defaultIsEmployee := false
 	return &v2.ConnectorMetadata{
 		DisplayName: "Procore",
 		Description: "This connector allows you to sync data from Procore.",
@@ -116,21 +117,33 @@ func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error)
 					DisplayName: "Is Employee",
 					Required:    false,
 					Description: "Indicates if the user is an employee.",
-					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
-						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
+					Field: &v2.ConnectorAccountCreationSchema_Field_BoolField{
+						BoolField: &v2.ConnectorAccountCreationSchema_BoolField{
+							DefaultValue: &defaultIsEmployee,
+						},
 					},
 					Placeholder: "Is Employee",
 					Order:       8,
 				},
-				"isActive": {
-					DisplayName: "Is Active",
+				"employeeId": {
+					DisplayName: "Employee ID",
 					Required:    false,
-					Description: "Indicates if the user is currently active.",
+					Description: "The ID of the Employee of the Company User when user[is_employee] is set to true.",
 					Field: &v2.ConnectorAccountCreationSchema_Field_StringField{
 						StringField: &v2.ConnectorAccountCreationSchema_StringField{},
 					},
-					Placeholder: "Is Active",
+					Placeholder: "Employee ID",
 					Order:       9,
+				},
+				"vendorId": {
+					DisplayName: "Vendor ID",
+					Required:    false,
+					Description: "The ID of the Vendor of the Company User.",
+					Field: &v2.ConnectorAccountCreationSchema_Field_IntField{
+						IntField: &v2.ConnectorAccountCreationSchema_IntField{},
+					},
+					Placeholder: "Vendor ID",
+					Order:       10,
 				},
 			},
 		},

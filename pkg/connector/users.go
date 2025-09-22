@@ -116,9 +116,8 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 	error,
 ) {
 	var (
-		vendorIdInt int64
-		err         error
-		userBody    client.UserBody
+		err      error
+		userBody client.UserBody
 	)
 	pMap := accountInfo.Profile.AsMap()
 	companyId, ok := pMap["companyId"].(string)
@@ -156,13 +155,19 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 		EmployeeId:   employeeId,
 		IsEmployee:   isEmployee,
 	}
-	vendorId, ok := pMap["vendorId"].(string)
-	if ok && vendorId != "" {
-		vendorIdInt, err = strconv.ParseInt(vendorId, 10, 64)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("baton-procore: error parsing vendorId: %w", err)
+	switch v := pMap["vendorId"].(type) {
+	case int:
+		userBody.VendorId = v
+	case float64:
+		// Convert float64 to int, but check for precision loss
+		if v != float64(int64(v)) {
+			return nil, nil, nil, fmt.Errorf("baton-procore: invalid vendorId, value has precision loss when converting from float64")
 		}
-		userBody.VendorId = int(vendorIdInt)
+		userBody.VendorId = int(v)
+	case nil:
+		// vendorId not provided, which is optional
+	default:
+		return nil, nil, nil, fmt.Errorf("baton-procore: invalid vendorId, value has unexpected type: %T", v)
 	}
 
 	user, err := o.client.CreateCompanyUser(ctx, companyId, client.CreateUserBody{
