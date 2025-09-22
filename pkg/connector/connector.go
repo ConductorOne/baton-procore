@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/conductorone/baton-procore/pkg/client"
+	cfg "github.com/conductorone/baton-procore/pkg/config"
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
@@ -37,7 +38,7 @@ func (d *Connector) Asset(ctx context.Context, asset *v2.AssetRef) (string, io.R
 // Metadata returns metadata about the connector.
 func (d *Connector) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error) {
 	return &v2.ConnectorMetadata{
-		DisplayName: "Baton Connector",
+		DisplayName: "Procore",
 		Description: "This connector allows you to sync data from Procore.",
 		AccountCreationSchema: &v2.ConnectorAccountCreationSchema{
 			FieldMap: map[string]*v2.ConnectorAccountCreationSchema_Field{
@@ -143,7 +144,9 @@ func (d *Connector) Validate(ctx context.Context) (annotations.Annotations, erro
 }
 
 // New returns a new instance of the connector.
-func New(ctx context.Context, clientId, clientSecret string) (*Connector, error) {
+func New(ctx context.Context, config *cfg.Procore) (*Connector, error) {
+	clientId := config.ProcoreClientId
+	clientSecret := config.ProcoreClientSecret
 	client, err := client.New(ctx, clientId, clientSecret)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Procore client: %w", err)

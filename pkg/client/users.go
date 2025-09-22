@@ -73,30 +73,33 @@ func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId strin
 	return target, res, &rateLimitData, nil
 }
 
-func (c *Client) CreateCompanyUser(ctx context.Context, companyId string, body CreateUserBody) error {
+func (c *Client) CreateCompanyUser(ctx context.Context, companyId string, body CreateUserBody) (*User, error) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		return fmt.Errorf("failed to marshal user: %w", err)
+		return nil, fmt.Errorf("failed to marshal user: %w", err)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf(CompanyUsersURL, companyId), bytes.NewReader(jsonBody))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Procore-Company-Id", companyId)
 	req.Header.Set("Content-Type", "application/json")
 
-	res, err := c.Do(req)
+	var target User
+	res, err := c.Do(req,
+		uhttp.WithJSONResponse(&target),
+	)
 	if err != nil {
 		logBody(ctx, res.Body)
-		return fmt.Errorf("error creating company user in Procore API: %w", err)
+		return nil, fmt.Errorf("error creating company user in Procore API: %w", err)
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices {
 		logBody(ctx, res.Body)
-		return fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
+		return nil, fmt.Errorf("unexpected status code: %d, expected: %d", res.StatusCode, http.StatusOK)
 	}
 
-	return nil
+	return &target, nil
 }

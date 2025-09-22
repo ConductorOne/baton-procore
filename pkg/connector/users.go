@@ -35,12 +35,6 @@ func userResource(user client.User) (*v2.Resource, error) {
 		status = v2.UserTrait_Status_STATUS_DISABLED
 	}
 
-	_type := v2.UserTrait_ACCOUNT_TYPE_HUMAN
-	if !user.IsEmployee {
-		// managed service account, for installed apps
-		_type = v2.UserTrait_ACCOUNT_TYPE_SERVICE
-	}
-
 	return resourceSdk.NewUserResource(
 		user.Name,
 		userResourceType,
@@ -52,7 +46,7 @@ func userResource(user client.User) (*v2.Resource, error) {
 			resourceSdk.WithCreatedAt(user.CreatedAt),
 			resourceSdk.WithLastLogin(user.LastLoginAt),
 			resourceSdk.WithStatus(status),
-			resourceSdk.WithAccountType(_type),
+			resourceSdk.WithAccountType(v2.UserTrait_ACCOUNT_TYPE_HUMAN),
 		},
 	)
 }
@@ -121,6 +115,11 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 	annotations.Annotations,
 	error,
 ) {
+	var (
+		vendorIdInt int64
+		err         error
+		userBody    client.UserBody
+	)
 	pMap := accountInfo.Profile.AsMap()
 	companyId, ok := pMap["companyId"].(string)
 	if !ok {
@@ -134,34 +133,53 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 	if !ok {
 		return nil, nil, nil, fmt.Errorf("baton-procore: lastName not found in profile")
 	}
+	isEmployee, _ := pMap["isEmployee"].(bool)
+	employeeId, ok := pMap["employeeId"].(string)
+	if !ok && isEmployee {
+		// if the user is an employee, the employeeId is required
+		// https://developers.procore.com/reference/rest/company-users?version=latest#create-company-user
+		// user.employee_id: string
+		// The ID of the Employee of the Company User when user[is_employee] is set to true
+		return nil, nil, nil, fmt.Errorf("baton-procore: employeeId not found in profile, required for employee users")
+	}
 	firstName, _ := pMap["firstName"].(string)
 	city, _ := pMap["city"].(string)
 	address, _ := pMap["address"].(string)
 	jobTitle, _ := pMap["jobTitle"].(string)
-	isEmployee, _ := pMap["isEmployee"].(bool)
-	isActive, _ := pMap["isActive"].(bool)
+	userBody = client.UserBody{
+		EmailAddress: email,
+		LastName:     lastName,
+		FirstName:    firstName,
+		City:         city,
+		Address:      address,
+		JobTitle:     jobTitle,
+		EmployeeId:   employeeId,
+		IsEmployee:   isEmployee,
+	}
+	vendorId, ok := pMap["vendorId"].(string)
+	if ok && vendorId != "" {
+		vendorIdInt, err = strconv.ParseInt(vendorId, 10, 64)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("baton-procore: error parsing vendorId: %w", err)
+		}
+		userBody.VendorId = int(vendorIdInt)
+	}
 
-	err := o.client.CreateCompanyUser(ctx, companyId, client.CreateUserBody{
-		User: client.UserBody{
-			EmailAddress: email,
-			LastName:     lastName,
-			FirstName:    firstName,
-			City:         city,
-			Address:      address,
-			JobTitle:     jobTitle,
-			IsEmployee:   isEmployee,
-			IsActive:     isActive,
-		},
+	user, err := o.client.CreateCompanyUser(ctx, companyId, client.CreateUserBody{
+		User: userBody,
 	})
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("baton-procore: failed to create account: %w", err)
 	}
+	userResource, err := userResource(*user)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("baton-procore: error converting user to resource: %w", err)
+	}
 
-	return &v2.CreateAccountResponse_ActionRequiredResult{}, nil, nil, nil
-}
-
-func (o *userBuilder) Delete(ctx context.Context, resourceId *v2.ResourceId) (annotations.Annotations, error) {
-	return nil, fmt.Errorf("baton-procore: delete operation is not supported in the procore API yet ")
+	return &v2.CreateAccountResponse_SuccessResult{
+		Resource:              userResource,
+		IsCreateAccountResult: true,
+	}, nil, nil, nil
 }
 
 func newUserBuilder(client *client.Client) *userBuilder {
