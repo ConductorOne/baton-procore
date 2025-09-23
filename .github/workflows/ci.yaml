@@ -46,6 +46,7 @@ jobs:
       - name: Test Account Provisioning
         uses: ConductorOne/github-workflows/actions/account-provisioning@v3
         with:
+          connector: ./baton-procore
           account-email: "test-${{ github.run_id }}@test.com"
           account-profile: >-
             {
