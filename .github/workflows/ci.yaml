@@ -43,9 +43,6 @@ jobs:
         run: go build ./cmd/baton-procore
       - name: Run baton-procore
         run: ./baton-procore
-      - name: Install baton
-        run: ./scripts/get-baton.sh && mv baton /usr/local/bin
-
       - name: Test Account Provisioning
         uses: ConductorOne/github-workflows/actions/account-provisioning@v3
         with:
