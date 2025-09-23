@@ -46,6 +46,20 @@ jobs:
       - name: Install baton
         run: ./scripts/get-baton.sh && mv baton /usr/local/bin
 
+      - name: Test Account Provisioning
+        uses: ConductorOne/github-workflows/actions/account-provisioning@v3
+        with:
+          account-email: "test-${{ github.run_id }}@test.com"
+          account-profile: >-
+            {
+              "email": "test-${{ github.run_id }}@test.com",
+              "firstName": "Baton-${{ github.run_id }}",
+              "lastName": "CI-Test",
+              "companyId": "598134325726807",
+              "isEmployee": true,
+              "employeeId": "${{ github.run_id }}"
+            }
+
       - name: Check for grant before revoking
         run: |
           baton grants --entitlement="${{ env.CONNECTOR_ENTITLEMENT }}" --output-format=json | \
