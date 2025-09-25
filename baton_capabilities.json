@@ -36,16 +36,14 @@
       },
       "capabilities":  [
         "CAPABILITY_SYNC",
-        "CAPABILITY_ACCOUNT_PROVISIONING",
-        "CAPABILITY_RESOURCE_DELETE"
+        "CAPABILITY_ACCOUNT_PROVISIONING"
       ]
     }
   ],
   "connectorCapabilities":  [
     "CAPABILITY_PROVISION",
     "CAPABILITY_SYNC",
-    "CAPABILITY_ACCOUNT_PROVISIONING",
-    "CAPABILITY_RESOURCE_DELETE"
+    "CAPABILITY_ACCOUNT_PROVISIONING"
   ],
   "credentialDetails":  {
     "capabilityAccountProvisioning":  {

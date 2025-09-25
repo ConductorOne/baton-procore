@@ -167,7 +167,9 @@ type UserBody struct {
 	Address    string `json:"address,omitempty"`
 	JobTitle   string `json:"job_title,omitempty"`
 	IsEmployee bool   `json:"is_employee,omitempty"`
+	EmployeeId string `json:"employee_id,omitempty"` // The ID of the Employee of the Company User when user[is_employee] is set to true
 	IsActive   bool   `json:"is_active,omitempty"`
+	VendorId   int    `json:"vendor_id,omitempty"`
 }
 
 type PermissionTemplate struct {

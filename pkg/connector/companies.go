@@ -48,7 +48,7 @@ func (o *companyBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
 		}
 	}
 
@@ -93,7 +93,7 @@ func (o *companyBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-terraform-cloud: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
 		}
 	}
 
