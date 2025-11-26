@@ -28,7 +28,8 @@ func companyResource(company client.Company) (*v2.Resource, error) {
 	profile := map[string]any{
 		"isActive": company.IsActive,
 	}
-	return resourceSdk.NewGroupResource(
+
+	ret, err := resourceSdk.NewGroupResource(
 		company.Name,
 		companyResourceType,
 		company.Id,
@@ -40,6 +41,11 @@ func companyResource(company client.Company) (*v2.Resource, error) {
 			&v2.ChildResourceType{ResourceTypeId: userResourceType.Id},
 		),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
 
 func (o *companyBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId, pToken *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
@@ -48,14 +54,14 @@ func (o *companyBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("invalid page token format for companies: %w", err)
 		}
 	}
 
 	var annotations annotations.Annotations
 	companies, res, rateLimitDesc, err := o.client.GetCompanies(ctx, page)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
+		return nil, "", nil, fmt.Errorf("failed to get companies: %w", err)
 	}
 	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
@@ -63,7 +69,7 @@ func (o *companyBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 	for _, company := range companies {
 		resource, err := companyResource(company)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: error converting company to resource: %w", err)
+			return nil, "", nil, fmt.Errorf("error converting company to resource: %w", err)
 		}
 		rv = append(rv, resource)
 	}
@@ -93,14 +99,14 @@ func (o *companyBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("invalid page token format for company grants: %w", err)
 		}
 	}
 
 	var annotations annotations.Annotations
 	users, res, rateLimitDesc, err := o.client.GetCompanyUsers(ctx, resource.Id.Resource, page)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
+		return nil, "", nil, fmt.Errorf("failed to get users: %w", err)
 	}
 	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
@@ -108,7 +114,7 @@ func (o *companyBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 	for _, user := range users {
 		principalID, err := resourceSdk.NewResourceID(userResourceType, user.Id)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: failed to create user resource ID: %w", err)
+			return nil, "", nil, fmt.Errorf("failed to create user resource ID: %w", err)
 		}
 		rv = append(rv, grant.NewGrant(
 			resource,

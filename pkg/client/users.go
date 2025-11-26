@@ -14,7 +14,7 @@ import (
 func (c *Client) GetCompanyUsers(ctx context.Context, companyId string, page int) ([]User, *http.Response, *v2.RateLimitDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(CompanyUsersURL, companyId), nil)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create company users request: %w", err)
 	}
 	values := req.URL.Query()
 	values.Set("page", fmt.Sprintf("%d", page))
@@ -28,8 +28,10 @@ func (c *Client) GetCompanyUsers(ctx context.Context, companyId string, page int
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
 	if err != nil {
-		logBody(ctx, res.Body)
-		return nil, nil, nil, fmt.Errorf("error getting company users from Procore API: %w", err)
+		if res != nil && res.Body != nil {
+			logBody(ctx, res.Body)
+		}
+		return nil, nil, nil, fmt.Errorf("failed to get company users: %w", err)
 	}
 
 	defer res.Body.Close()
@@ -44,7 +46,7 @@ func (c *Client) GetCompanyUsers(ctx context.Context, companyId string, page int
 func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId string, page int) ([]User, *http.Response, *v2.RateLimitDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(ProjectUsersURL, projectId), nil)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create project users request: %w", err)
 	}
 
 	req.Header.Set("Procore-Company-Id", companyId)
@@ -61,7 +63,10 @@ func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId strin
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("error getting project users from Procore API: %w", err)
+		if res != nil && res.Body != nil {
+			logBody(ctx, res.Body)
+		}
+		return nil, nil, nil, fmt.Errorf("failed to get project users: %w", err)
 	}
 
 	defer res.Body.Close()
@@ -76,7 +81,7 @@ func (c *Client) GetProjectUsers(ctx context.Context, companyId, projectId strin
 func (c *Client) CreateCompanyUser(ctx context.Context, companyId string, body CreateUserBody) (*User, error) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal user: %w", err)
+		return nil, fmt.Errorf("failed to marshal user data for creation: %w", err)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf(CompanyUsersURL, companyId), bytes.NewReader(jsonBody))
 	if err != nil {
@@ -91,8 +96,10 @@ func (c *Client) CreateCompanyUser(ctx context.Context, companyId string, body C
 		uhttp.WithJSONResponse(&target),
 	)
 	if err != nil {
-		logBody(ctx, res.Body)
-		return nil, fmt.Errorf("error creating company user in Procore API: %w", err)
+		if res != nil && res.Body != nil {
+			logBody(ctx, res.Body)
+		}
+		return nil, fmt.Errorf("failed to create company user: %w", err)
 	}
 
 	defer res.Body.Close()

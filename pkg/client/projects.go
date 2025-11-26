@@ -12,7 +12,7 @@ import (
 func (c *Client) GetProjects(ctx context.Context, companyId string, page int) ([]Project, *http.Response, *v2.RateLimitDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, GetProjectsURL, nil)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create projects request: %w", err)
 	}
 
 	req.Header.Set("Procore-Company-Id", companyId)
@@ -29,8 +29,10 @@ func (c *Client) GetProjects(ctx context.Context, companyId string, page int) ([
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
 	if err != nil {
-		logBody(ctx, res.Body)
-		return nil, nil, nil, fmt.Errorf("baton-procore: error getting projects: %w", err)
+		if res != nil && res.Body != nil {
+			logBody(ctx, res.Body)
+		}
+		return nil, nil, nil, fmt.Errorf("failed to get projects: %w", err)
 	}
 
 	defer res.Body.Close()
@@ -52,8 +54,10 @@ func (c *Client) AddUserToProject(ctx context.Context, companyId, projectId stri
 
 	res, err := c.Do(req)
 	if err != nil {
-		logBody(ctx, res.Body)
-		return fmt.Errorf("baton-procore: error adding user to project: %w", err)
+		if res != nil && res.Body != nil {
+			logBody(ctx, res.Body)
+		}
+		return fmt.Errorf("failed to add user to project: %w", err)
 	}
 
 	defer res.Body.Close()
@@ -75,8 +79,10 @@ func (c *Client) RemoveUserFromProject(ctx context.Context, companyId, projectId
 
 	res, err := c.Do(req)
 	if err != nil {
-		logBody(ctx, res.Body)
-		return fmt.Errorf("baton-procore: error removing user from project: %w", err)
+		if res != nil && res.Body != nil {
+			logBody(ctx, res.Body)
+		}
+		return fmt.Errorf("failed to remove user from project: %w", err)
 	}
 
 	defer res.Body.Close()
