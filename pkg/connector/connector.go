@@ -2,7 +2,6 @@ package connector
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/conductorone/baton-procore/pkg/client"
@@ -10,6 +9,8 @@ import (
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
+	"github.com/conductorone/baton-sdk/pkg/uhttp"
+	"google.golang.org/grpc/codes"
 )
 
 type Connector struct {
@@ -162,7 +163,7 @@ func New(ctx context.Context, config *cfg.Procore) (*Connector, error) {
 	clientSecret := config.ProcoreClientSecret
 	client, err := client.New(ctx, clientId, clientSecret)
 	if err != nil {
-		return nil, fmt.Errorf("error creating Procore client: %w", err)
+		return nil, uhttp.WrapErrors(codes.InvalidArgument, "failed to create client with provided credentials", err)
 	}
 	return &Connector{
 		client:     client,

@@ -14,7 +14,7 @@ const perPage = 100
 func (c *Client) GetCompanies(ctx context.Context, page int) ([]Company, *http.Response, *v2.RateLimitDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, GetCompaniesURL, nil)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create companies request: %w", err)
 	}
 
 	values := req.URL.Query()
@@ -29,8 +29,10 @@ func (c *Client) GetCompanies(ctx context.Context, page int) ([]Company, *http.R
 		uhttp.WithRatelimitData(&rateLimitData),
 	)
 	if err != nil {
-		logBody(ctx, res.Body)
-		return nil, nil, nil, fmt.Errorf("baton-procore: error getting companies: %w", err)
+		if res != nil && res.Body != nil {
+			logBody(ctx, res.Body)
+		}
+		return nil, nil, nil, fmt.Errorf("error getting companies: %w", err)
 	}
 
 	defer res.Body.Close()

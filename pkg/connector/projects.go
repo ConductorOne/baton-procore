@@ -23,12 +23,12 @@ type projectBuilder struct {
 func getCompanyId(resource *v2.Resource) (string, error) {
 	groupTrait, err := resourceSdk.GetGroupTrait(resource)
 	if err != nil {
-		return "", fmt.Errorf("baton-procore: error getting group traits: %w", err)
+		return "", fmt.Errorf("failed to extract group traits from project resource: %w", err)
 	}
 	traits := groupTrait.GetProfile().AsMap()
 	companyId, ok := traits["company_id"].(string)
 	if !ok {
-		return "", fmt.Errorf("baton-procore: company_id not found in project resource profile")
+		return "", fmt.Errorf("company_id missing from project resource profile")
 	}
 	return companyId, nil
 }
@@ -43,7 +43,8 @@ func projectResource(project client.Project) (*v2.Resource, error) {
 		"company_name": project.Company.Name,
 		"active":       project.Active,
 	}
-	return resourceSdk.NewGroupResource(
+
+	ret, err := resourceSdk.NewGroupResource(
 		project.Name,
 		projectResourceType,
 		project.Id,
@@ -51,6 +52,11 @@ func projectResource(project client.Project) (*v2.Resource, error) {
 			resourceSdk.WithGroupProfile(profile),
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
 
 func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId, pToken *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
@@ -63,14 +69,14 @@ func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("invalid page token format for projects: %w", err)
 		}
 	}
 
 	var annotations annotations.Annotations
 	projects, res, rateLimitDesc, err := o.client.GetProjects(ctx, parentResourceID.Resource, page)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting projects: %w", err)
+		return nil, "", nil, fmt.Errorf("error getting projects: %w", err)
 	}
 	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
@@ -78,7 +84,7 @@ func (o *projectBuilder) List(ctx context.Context, parentResourceID *v2.Resource
 	for _, project := range projects {
 		resource, err := projectResource(project)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: error converting project to resource: %w", err)
+			return nil, "", nil, fmt.Errorf("failed to convert project data to resource: %w", err)
 		}
 		rv = append(rv, resource)
 	}
@@ -109,20 +115,20 @@ func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("invalid page token format for project grants: %w", err)
 		}
 	}
 
 	// get company id from resource groupTrait
 	companyId, err := getCompanyId(resource)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting company id from project resource: %w", err)
+		return nil, "", nil, fmt.Errorf("error getting company id from project resource: %w", err)
 	}
 
 	var annotations annotations.Annotations
 	users, res, rateLimitDesc, err := o.client.GetProjectUsers(ctx, companyId, resource.Id.Resource, page)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
+		return nil, "", nil, fmt.Errorf("error getting users: %w", err)
 	}
 	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
@@ -130,7 +136,7 @@ func (o *projectBuilder) Grants(ctx context.Context, resource *v2.Resource, pTok
 	for _, user := range users {
 		principalID, err := resourceSdk.NewResourceID(userResourceType, user.Id)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: failed to create user resource ID: %w", err)
+			return nil, "", nil, fmt.Errorf("failed to create user resource ID for project grant: %w", err)
 		}
 		rv = append(rv, grant.NewGrant(
 			resource,
@@ -149,16 +155,16 @@ func (o *projectBuilder) Grant(ctx context.Context, principal *v2.Resource, enti
 	projectId := entitlement.Resource.Id.Resource
 	companyId, err := getCompanyId(entitlement.Resource)
 	if err != nil {
-		return nil, fmt.Errorf("baton-procore: error getting company id from project resource: %w", err)
+		return nil, fmt.Errorf("error getting company id from project resource: %w", err)
 	}
 	userId, err := strconv.Atoi(principal.Id.Resource)
 	if err != nil {
-		return nil, fmt.Errorf("baton-procore: failed to parse user id from grant principal: %w", err)
+		return nil, fmt.Errorf("invalid user ID format for project grant: %w", err)
 	}
 
 	err = o.client.AddUserToProject(ctx, companyId, projectId, userId)
 	if err != nil {
-		return nil, fmt.Errorf("baton-procore: error adding user to project: %w", err)
+		return nil, fmt.Errorf("error adding user to project: %w", err)
 	}
 
 	return nil, nil
@@ -169,16 +175,16 @@ func (o *projectBuilder) Revoke(ctx context.Context, grant *v2.Grant) (annotatio
 	projectId := entitlement.Resource.Id.Resource
 	companyId, err := getCompanyId(entitlement.Resource)
 	if err != nil {
-		return nil, fmt.Errorf("baton-procore: error getting company id from project resource: %w", err)
+		return nil, fmt.Errorf("error getting company id from project resource: %w", err)
 	}
 	userId, err := strconv.Atoi(grant.Principal.Id.Resource)
 	if err != nil {
-		return nil, fmt.Errorf("baton-procore: failed to parse user id from grant principal: %w", err)
+		return nil, fmt.Errorf("invalid user ID format for project revoke: %w", err)
 	}
 
 	err = o.client.RemoveUserFromProject(ctx, companyId, projectId, userId)
 	if err != nil {
-		return nil, fmt.Errorf("baton-procore: error removing user from project: %w", err)
+		return nil, fmt.Errorf("error removing user from project: %w", err)
 	}
 
 	return nil, nil

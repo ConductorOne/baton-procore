@@ -11,6 +11,8 @@ import (
 	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
 	"github.com/conductorone/baton-sdk/pkg/pagination"
 	resourceSdk "github.com/conductorone/baton-sdk/pkg/types/resource"
+	"github.com/conductorone/baton-sdk/pkg/uhttp"
+	"google.golang.org/grpc/codes"
 )
 
 type userBuilder struct {
@@ -35,7 +37,7 @@ func userResource(user client.User) (*v2.Resource, error) {
 		status = v2.UserTrait_Status_STATUS_DISABLED
 	}
 
-	return resourceSdk.NewUserResource(
+	ret, err := resourceSdk.NewUserResource(
 		user.Name,
 		userResourceType,
 		user.Id,
@@ -49,6 +51,11 @@ func userResource(user client.User) (*v2.Resource, error) {
 			resourceSdk.WithAccountType(v2.UserTrait_ACCOUNT_TYPE_HUMAN),
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
 
 // List returns all the users from the database as resource objects.
@@ -63,14 +70,14 @@ func (o *userBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId,
 	if pToken.Token != "" {
 		page, err = strconv.Atoi(pToken.Token)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: failed to parse page token: %w", err)
+			return nil, "", nil, fmt.Errorf("invalid page token format for users: %w", err)
 		}
 	}
 
 	var annotations annotations.Annotations
 	users, res, rateLimitDesc, err := o.client.GetCompanyUsers(ctx, parentResourceID.Resource, page)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("baton-procore: error getting users: %w", err)
+		return nil, "", nil, fmt.Errorf("failed to get users: %w", err)
 	}
 	annotations = *annotations.WithRateLimiting(rateLimitDesc)
 
@@ -78,7 +85,7 @@ func (o *userBuilder) List(ctx context.Context, parentResourceID *v2.ResourceId,
 	for _, user := range users {
 		resource, err := userResource(user)
 		if err != nil {
-			return nil, "", nil, fmt.Errorf("baton-procore: error converting user to resource: %w", err)
+			return nil, "", nil, fmt.Errorf("failed to convert user data to resource: %w", err)
 		}
 		rv = append(rv, resource)
 	}
@@ -122,15 +129,15 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 	pMap := accountInfo.Profile.AsMap()
 	companyId, ok := pMap["companyId"].(string)
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("baton-procore: companyId not found in parent resource ID")
+		return nil, nil, nil, uhttp.WrapErrors(codes.InvalidArgument, "companyId missing from account creation profile")
 	}
 	email, ok := pMap["email"].(string)
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("baton-procore: email not found in profile")
+		return nil, nil, nil, uhttp.WrapErrors(codes.InvalidArgument, "email missing from account creation profile")
 	}
 	lastName, ok := pMap["lastName"].(string)
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("baton-procore: lastName not found in profile")
+		return nil, nil, nil, uhttp.WrapErrors(codes.InvalidArgument, "lastName missing from account creation profile")
 	}
 	isEmployee, _ := pMap["isEmployee"].(bool)
 	employeeId, ok := pMap["employeeId"].(string)
@@ -139,7 +146,7 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 		// https://developers.procore.com/reference/rest/company-users?version=latest#create-company-user
 		// user.employee_id: string
 		// The ID of the Employee of the Company User when user[is_employee] is set to true
-		return nil, nil, nil, fmt.Errorf("baton-procore: employeeId not found in profile, required for employee users")
+		return nil, nil, nil, uhttp.WrapErrors(codes.InvalidArgument, "employeeId required for employee users but not provided")
 	}
 	firstName, _ := pMap["firstName"].(string)
 	city, _ := pMap["city"].(string)
@@ -161,24 +168,24 @@ func (o *userBuilder) CreateAccount(ctx context.Context, accountInfo *v2.Account
 	case float64:
 		// Convert float64 to int, but check for precision loss
 		if v != float64(int64(v)) {
-			return nil, nil, nil, fmt.Errorf("baton-procore: invalid vendorId, value has precision loss when converting from float64")
+			return nil, nil, nil, uhttp.WrapErrors(codes.InvalidArgument, "vendorId has precision loss when converting from float64")
 		}
 		userBody.VendorId = int(v)
 	case nil:
 		// vendorId not provided, which is optional
 	default:
-		return nil, nil, nil, fmt.Errorf("baton-procore: invalid vendorId, value has unexpected type: %T", v)
+		return nil, nil, nil, uhttp.WrapErrors(codes.InvalidArgument, fmt.Sprintf("vendorId has unexpected type %T", v))
 	}
 
 	user, err := o.client.CreateCompanyUser(ctx, companyId, client.CreateUserBody{
 		User: userBody,
 	})
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("baton-procore: failed to create account: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create account: %w", err)
 	}
 	userResource, err := userResource(*user)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("baton-procore: error converting user to resource: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to convert created user to resource: %w", err)
 	}
 
 	return &v2.CreateAccountResponse_SuccessResult{
