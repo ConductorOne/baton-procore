@@ -27,6 +27,12 @@ func New(ctx context.Context, clientId, clientSecret string) (*Client, error) {
 		TokenURL:     "https://login.procore.com/oauth/token",
 	}
 
+	// Validate credentials by attempting to get a token immediately
+	_, err := config.Token(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with provided credentials: %w", err)
+	}
+
 	client, err := uhttp.NewBaseHttpClientWithContext(ctx, config.Client(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("error creating HTTP client: %w", err)
