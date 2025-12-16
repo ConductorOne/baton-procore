@@ -163,7 +163,7 @@ func New(ctx context.Context, config *cfg.Procore) (*Connector, error) {
 	clientSecret := config.ProcoreClientSecret
 	client, err := client.New(ctx, clientId, clientSecret)
 	if err != nil {
-		return nil, uhttp.WrapErrors(codes.InvalidArgument, "failed to create client with provided credentials", err)
+		return nil, uhttp.WrapErrors(codes.Unauthenticated, "failed to create client with provided credentials", err)
 	}
 	return &Connector{
 		client:     client,
