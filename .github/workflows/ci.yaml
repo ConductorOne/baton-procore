@@ -1,5 +1,10 @@
 name: ci
-on: pull_request
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - main
 
 env:
   BATON_LOG_LEVEL: debug
@@ -11,12 +16,12 @@ jobs:
   go-lint:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
-      - name: Checkout code
-        uses: actions/checkout@v4
+          go-version-file: 'go.mod'
       - name: Run linters
         uses: golangci/golangci-lint-action@v8
         with:
@@ -33,12 +38,12 @@ jobs:
       CONNECTOR_PRINCIPAL: '13753064'
       CONNECTOR_PRINCIPAL_TYPE: 'user'
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24.x
-      - name: Checkout code
-        uses: actions/checkout@v4
+          go-version-file: 'go.mod'
       - name: Build baton-procore
         run: go build ./cmd/baton-procore
       - name: Run baton-procore
@@ -83,4 +88,3 @@ jobs:
           ./baton-procore && \
           baton grants --entitlement="${{ env.CONNECTOR_ENTITLEMENT }}" --output-format=json | \
           jq --exit-status ".grants[].principal.id.resource == \"${{ env.CONNECTOR_PRINCIPAL }}\"" | grep -oq true
-
