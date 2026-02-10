@@ -1,6 +1,6 @@
 ![Baton Logo](./baton-logo.png)
 
-# `baton-procore` [![Go Reference](https://pkg.go.dev/badge/github.com/conductorone/baton-procore.svg)](https://pkg.go.dev/github.com/conductorone/baton-procore) ![main ci](https://github.com/conductorone/baton-procore/actions/workflows/main.yaml/badge.svg)
+# `baton-procore` [![Go Reference](https://pkg.go.dev/badge/github.com/conductorone/baton-procore.svg)](https://pkg.go.dev/github.com/conductorone/baton-procore) ![ci](https://github.com/conductorone/baton-procore/actions/workflows/ci.yaml/badge.svg)
 
 `baton-procore` is a connector for built using the [Baton SDK](https://github.com/conductorone/baton-sdk).
 
