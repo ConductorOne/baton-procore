@@ -21,11 +21,7 @@ type projectBuilder struct {
 }
 
 func getCompanyId(resource *v2.Resource) (string, error) {
-	groupTrait, err := resourceSdk.GetGroupTrait(resource)
-	if err != nil {
-		return "", fmt.Errorf("failed to extract group traits from project resource: %w", err)
-	}
-	traits := groupTrait.GetProfile().AsMap()
+	traits := resourceSdk.GetProfile(resource).AsMap()
 	companyId, ok := traits["company_id"].(string)
 	if !ok {
 		return "", fmt.Errorf("company_id missing from project resource profile")
@@ -48,9 +44,8 @@ func projectResource(project client.Project) (*v2.Resource, error) {
 		project.Name,
 		projectResourceType,
 		project.Id,
-		[]resourceSdk.GroupTraitOption{
-			resourceSdk.WithGroupProfile(profile),
-		},
+		nil,
+		resourceSdk.WithResourceProfile(profile),
 	)
 	if err != nil {
 		return nil, err

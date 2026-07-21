@@ -32,9 +32,9 @@ func userResource(user client.User) (*v2.Resource, error) {
 		"contact": false,
 	}
 
-	status := v2.UserTrait_Status_STATUS_ENABLED
+	status := v2.Status_RESOURCE_STATUS_ENABLED
 	if !user.IsActive {
-		status = v2.UserTrait_Status_STATUS_DISABLED
+		status = v2.Status_RESOURCE_STATUS_DISABLED
 	}
 
 	ret, err := resourceSdk.NewUserResource(
@@ -42,14 +42,14 @@ func userResource(user client.User) (*v2.Resource, error) {
 		userResourceType,
 		user.Id,
 		[]resourceSdk.UserTraitOption{
-			resourceSdk.WithUserProfile(profile),
 			resourceSdk.WithEmail(user.EmailAddress, true),
 			resourceSdk.WithEmployeeID(user.EmployeeId),
-			resourceSdk.WithCreatedAt(user.CreatedAt),
 			resourceSdk.WithLastLogin(user.LastLoginAt),
-			resourceSdk.WithStatus(status),
 			resourceSdk.WithAccountType(v2.UserTrait_ACCOUNT_TYPE_HUMAN),
 		},
+		resourceSdk.WithResourceProfile(profile),
+		resourceSdk.WithResourceCreatedAt(user.CreatedAt),
+		resourceSdk.WithResourceStatus(status, ""),
 	)
 	if err != nil {
 		return nil, err
