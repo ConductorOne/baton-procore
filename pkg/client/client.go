@@ -21,7 +21,7 @@ func (c *Client) _Token() *oauth2.Token {
 }
 
 func New(ctx context.Context, clientId, clientSecret string) (*Client, error) {
-	config := &clientcredentials.Config{
+	config := &clientcredentials.Config{ //nolint:gosec // G101 false positive: TokenURL is a public OAuth endpoint, not a hardcoded credential
 		ClientID:     clientId,
 		ClientSecret: clientSecret,
 		TokenURL:     "https://login.procore.com/oauth/token",
